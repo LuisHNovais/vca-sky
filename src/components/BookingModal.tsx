@@ -189,7 +189,7 @@ export default function BookingModal({ isOpen, onClose, flight }: BookingModalPr
                 disabled={isSubmitting}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Processando...' : 'Confirmar Compra'}
+                {isSubmitting ? 'Processando...' : 'Solicitar contato'}
               </button>
             </div>
           </form>

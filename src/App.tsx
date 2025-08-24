@@ -3,19 +3,44 @@ import { Plane, Globe } from 'lucide-react';
 import SearchForm, { SearchData } from './components/SearchForm';
 import PopularRoutes, { Flight } from './components/PopularRoutes';
 import BookingModal from './components/BookingModal';
+import FlightResults from './components/FlightResults';
+import { FlightService } from './services/flightService';
+import { FlightSearchResponse, Flight as FlightType } from './types';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+  const [searchResults, setSearchResults] = useState<FlightSearchResponse | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const flightService = FlightService.getInstance();
 
-  const handleSearch = (searchData: SearchData) => {
-    console.log('Pesquisando voos:', searchData);
-    // Aqui você implementaria a lógica de pesquisa real
-    alert(`Pesquisando voos de ${searchData.origin} para ${searchData.destination} em ${new Date(searchData.departureDate).toLocaleDateString('pt-BR')}`);
+  const handleSearch = async (searchData: SearchData) => {
+    if (!searchData.originAirport || !searchData.destinationAirport) return;
+    
+    setIsSearching(true);
+    setSearchResults(null);
+    
+    try {
+      const results = await flightService.searchFlights({
+        origin: searchData.originAirport.code,
+        destination: searchData.destinationAirport.code,
+        departureDate: searchData.departureDate,
+        returnDate: searchData.returnDate,
+        isRoundTrip: searchData.isRoundTrip,
+        class: searchData.class
+      });
+      
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Erro ao buscar voos:', error);
+      alert('Erro ao buscar voos. Tente novamente.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const handleSelectFlight = (flight: Flight) => {
-    setSelectedFlight(flight);
+  const handleSelectFlight = (flight: Flight | FlightType) => {
+    setSelectedFlight(flight as Flight);
     setIsModalOpen(true);
   };
 
@@ -34,7 +59,7 @@ function App() {
               <div className="bg-blue-600 p-2 rounded-full">
                 <Plane className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-800">SkyBooking</h1>
+              <h1 className="text-2xl font-bold text-gray-800">vcaSky</h1>
             </div>
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Voos</a>
@@ -69,16 +94,41 @@ function App() {
         </div>
       </section>
 
+      {/* Flight Results */}
+      {(searchResults || isSearching) && (
+        <section className="py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <FlightResults 
+              flights={searchResults?.outboundFlights || []}
+              onFlightSelect={handleSelectFlight}
+              loading={isSearching}
+            />
+            {searchResults?.returnFlights && searchResults.returnFlights.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Voos de Volta</h3>
+                <FlightResults 
+                  flights={searchResults.returnFlights}
+                  onFlightSelect={handleSelectFlight}
+                  loading={false}
+                />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+      
       {/* Popular Routes */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <PopularRoutes onSelectFlight={handleSelectFlight} />
-      </section>
+      {!searchResults && !isSearching && (
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <PopularRoutes onSelectFlight={handleSelectFlight} />
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Por que escolher a SkyBooking?</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Por que escolher a vcaSky?</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -118,7 +168,7 @@ function App() {
                 <div className="bg-blue-600 p-2 rounded-full">
                   <Plane className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold">SkyBooking</h3>
+                <h3 className="text-xl font-bold">vcaSky</h3>
               </div>
               <p className="text-gray-400">Sua plataforma de confiança para reservas de passagens aéreas.</p>
             </div>
@@ -146,15 +196,15 @@ function App() {
             <div>
               <h4 className="font-semibold mb-4">Contato</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>📞 0800 123 4567</li>
-                <li>✉️ contato@skybooking.com</li>
-                <li>📍 São Paulo, SP</li>
+                <li>📞 (77) 99842-8284</li>
+                <li>✉️ contato@vcasky.com.br</li>
+                <li>📍 Vitória da Conquista, BA</li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 SkyBooking. Todos os direitos reservados.</p>
+            <p>&copy; 2025 vcaSky. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
